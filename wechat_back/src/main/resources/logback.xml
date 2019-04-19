@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	scan:当此属性设置为true时,配置文件如果发生改变,将被重新加载,默认为true
+	scanPeriod:设置检测配置文件是否有修改的时间间隔,如果没有给出时间单位,默认单位为毫秒
+		当scan为true时,此配置生效,默认为1分钟
+	debug:当此属性设置为true时,将打印出logback内部日志信息,实时查看logback运行状态,默认为			false
+-->
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
+    <!--定义日志文件的存储地址,不要使用相对路径-->
+    <property name="LOG_HOME" value="C:/Users/admin/Desktop/mmall_log"/>
+    
+    <!--控制台输出-->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoding>UTF-8</encoding>
+        <encoder>
+	    <!--%,-1level只显示信息级别的首字母,%-5level 左对齐显示信息级别全称-->
+            <pattern>[%d{HH:mm:ss.SSS}][%p][%c{40}][%t] %m%n</pattern>
+        </encoder>
+        <!--指定只接收DEBUG级别的日志信息-->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+    </appender>
+    
+    <!--每天生成日志文件,如果文件大小超过50则生成1个文件,同时旧文件按${LOG_HOME}/logs
+         /mmall.log.%d{yyyy-MM-dd}.gz-->
+    <appender name="mmall" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${LOG_HOME}/mmall.log</File>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/logs/mmall.log.%d{yyyy-MM-dd}.gz</fileNamePattern>
+            <append>true</append>
+	    <maxFileSize>50MB</maxFileSize> <!--保证日志不会太大-->
+            <maxHistory>10</maxHistory> <!--保存10天-->
+	    <totalSizeCap>1GB</totalSizeCap><!--总日志大小-->
+        </rollingPolicy>
+        <!--enocder负责两件事,1是把日志信息转换成字节数组,2是把字节数组写入到输出流-->
+        <encoder>
+            <pattern>[%d{HH:mm:ss.SSS}][%p][%c{40}][%t] %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="error" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${LOG_HOME}/error.log</File>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/error.log.%d{yyyy-MM-dd}.gz</fileNamePattern>
+            <append>true</append>
+            <maxHistory>10</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>[%d{HH:mm:ss.SSS}][%p][%c{40}][%t] %m%n</pattern>
+        </encoder>
+	<!--过滤器,可以过滤掉不符合条件的日志,INFO及以上的日志被处理,其他的拒绝-->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <!--指定过滤的等级-->
+	    <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+    <!--java项目中com.mmall包下的LoggerFactory.getFactory(Demo.class)获取的日志全部由
+         mmall 和console的appender处理-->
+    <logger name="com.mmall" additivity="false" level="INFO">
+        <appender-ref ref="mmall"/>
+        <appender-ref ref="console"/>
+    </logger>
+
+    <!--use mybatisMapper sql console-->
+    <logger name="com.mmall.dao" level="DEBUG"/>
+    
+    <!--根日志,所有logger默认继承自root,打印信息向上级传递,所以以上logger所打印的日志默认被
+         console appender,error appender也就是会被打印到控制台,可以在通过设置logger的additi
+	 vity="false"使之不再向上传递-->
+    <root level="DEBUG">
+        <appender-ref ref="console"/>
+        <appender-ref ref="error"/>
+    </root>
+</configuration>
